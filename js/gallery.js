@@ -66,15 +66,19 @@ const images = [
 
 const galleryImg = document.querySelector(".gallery");
 
-const markup = images.map(({ preview, original, description }) => {
-  return `<li class="gallery-item">
-    <a class="gallery-link" href="${original}">
-      <img class="gallery-image" src="${preview}" data-source="${original}" alt="${description}"/>
-    </a>
-  </li>`;
-});
+const generateGalleryMarkup = (images) => {
+  return images
+    .map(({ preview, original, description }) => {
+      return `<li class="gallery-item">
+        <a class="gallery-link" href="${original}">
+          <img class="gallery-image" src="${preview}" data-source="${original}" alt="${description}"/>
+        </a>
+      </li>`;
+    })
+    .join("");
+};
 
-galleryImg.insertAdjacentHTML("beforeend", markup.join(""));
+galleryImg.innerHTML += generateGalleryMarkup(images);
 
 galleryImg.addEventListener("click", handleImg);
 
@@ -82,34 +86,37 @@ let instance;
 
 function handleImg(event) {
   event.preventDefault();
-  if (event.target === event.currentTarget) {
+
+  const isGalleryImage = event.target.classList.contains("gallery-image");
+
+  if (!isGalleryImage) {
     return;
   }
+
   const original = event.target.dataset.source;
-  const description = event.target.querySelector("img");
+  const description = event.target.alt;
+
+  let instance;
 
   instance = basicLightbox.create(
-    `<div >
+    `<div>
       <img class="gallery-image" src="${original}" alt="${description}"/>
     </div>`,
     {
-      onShow: (instance) => {
-        document.addEventListener("keydown", (event) =>
-          closeOnEscape(event, instance)
-        );
+      onShow: () => {
+        document.addEventListener("keydown", handleKeyDown);
       },
-      onClose: (instance) => {
-        document.removeEventListener("keydown", (event) =>
-          closeOnEscape(event, instance)
-        );
+      onClose: () => {
+        document.removeEventListener("keydown", handleKeyDown);
       },
     }
   );
-  instance.show();
-}
 
-function closeOnEscape(event, instance) {
-  if (event.code === "Escape" && instance) {
-    instance.close();
+  instance.show();
+
+  function handleKeyDown(event) {
+    if (event.code === "Escape" && instance) {
+      instance.close();
+    }
   }
 }
